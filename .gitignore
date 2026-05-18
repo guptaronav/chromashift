@@ -1,0 +1,19 @@
+# Rojo build output
+*.rbxlx
+*.rbxl
+
+# Wally packages (installed, not committed)
+Packages/
+src/shared/Packages/
+
+# Rojo sourcemap
+sourcemap.json
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Brainstorm visuals (local only)
+.superpowers/
