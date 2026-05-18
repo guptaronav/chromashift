@@ -11,6 +11,9 @@
 
 local Knit = require(game:GetService("ReplicatedStorage").Chromashift.Packages.Knit)
 
+-- Build all ScreenGuis before controllers start so WaitForChild() calls resolve instantly
+require(script.UIBuilder).BuildAll()
+
 require(script.Controllers.UIController)
 require(script.Controllers.LobbyController)
 require(script.Controllers.VotingController)

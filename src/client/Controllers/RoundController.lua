@@ -23,11 +23,15 @@ local RoundController = Knit.CreateController { Name = "RoundController" }
 local LocalPlayer = Players.LocalPlayer
 
 -- State
-local _myRole        = nil  -- "Hider" | "Seeker"
-local _blindfoldFrame = nil  -- FullScreen Frame used for seeker blindfold
+local _myRole         = nil  -- "Hider" | "Seeker"
+local _blindfoldFrame = nil
 local _hudUI          = nil
 local _timerLabel     = nil
 local _roleLabel      = nil
+local _rolePill       = nil
+local _crosshair      = nil
+local _cooldownLabel  = nil
+local _aliveLabel     = nil
 local _resultUI       = nil
 
 -- Cooldown tracking (mirrors server; prevents spam clicks)
@@ -118,10 +122,13 @@ function RoundController:KnitStart()
     _resultUI     = playerGui:WaitForChild("ResultGui", 10)
 
     if _hudUI then
-        _timerLabel = _hudUI:FindFirstChild("TimerLabel", true)
-        _roleLabel  = _hudUI:FindFirstChild("RoleLabel",  true)
-        -- Blindfold is a full-screen black Frame inside HudGui (Visible = false by default)
-        _blindfoldFrame = _hudUI:FindFirstChild("Blindfold", true)
+        _timerLabel     = _hudUI:FindFirstChild("TimerLabel",     true)
+        _roleLabel      = _hudUI:FindFirstChild("RoleLabel",      true)
+        _rolePill       = _hudUI:FindFirstChild("RolePill",       true)
+        _crosshair      = _hudUI:FindFirstChild("Crosshair",      true)
+        _cooldownLabel  = _hudUI:FindFirstChild("CooldownLabel",  true)
+        _aliveLabel     = _hudUI:FindFirstChild("AliveLabel",     true)
+        _blindfoldFrame = _hudUI:FindFirstChild("Blindfold",      true)
         _hudUI.Enabled = false
     end
 
@@ -141,6 +148,13 @@ function RoundController:KnitStart()
             end
         end
 
+        -- Style role pill
+        if _rolePill then
+            _rolePill.BackgroundColor3 = _myRole == "Seeker"
+                and Color3.fromRGB(248, 113, 113)
+                or  Color3.fromRGB(74, 222, 128)
+        end
+
         -- Seekers start blinded during prep
         if _myRole == "Seeker" then
             showBlindfold()
@@ -150,13 +164,26 @@ function RoundController:KnitStart()
     -- ── Seeker released (prep phase ended) ──────
     _RoundService.SeekerReleased:Connect(function()
         hideBlindfold()
-        -- Enable click input for seekers
         if _myRole == "Seeker" then
+            if _crosshair     then _crosshair.Visible    = true end
+            if _cooldownLabel then _cooldownLabel.Visible = true end
+
             UserInputService.InputBegan:Connect(function(input, gameProcessed)
                 if gameProcessed then return end
                 if input.UserInputType == Enum.UserInputType.MouseButton1
                 or input.UserInputType == Enum.UserInputType.Touch then
                     onSeekerClick()
+                    -- Flash cooldown label red briefly
+                    if _cooldownLabel then
+                        _cooldownLabel.Text = "● COOLDOWN"
+                        _cooldownLabel.TextColor3 = Color3.fromRGB(248, 113, 113)
+                        task.delay(Constants.DETECTOR_COOLDOWN, function()
+                            if _cooldownLabel then
+                                _cooldownLabel.Text = "● READY"
+                                _cooldownLabel.TextColor3 = Color3.fromRGB(74, 222, 128)
+                            end
+                        end)
+                    end
                 end
             end)
         end
